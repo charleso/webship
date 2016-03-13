@@ -4,11 +4,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
 module Webship.Resource.Decision (
-    resource
-  , application
+    Resource
+  , FlowStateT (..)
+  , resource
   ) where
 
-import           Data.Time (UTCTime, getCurrentTime)
+import           Data.Time (UTCTime)
 import qualified Data.List.NonEmpty as NE
 
 import           Control.Monad.Trans.Class (MonadTrans, lift)
@@ -18,11 +19,9 @@ import           Control.Monad.Trans.Writer (WriterT (..), tell, writer)
 import           Network.HTTP.Media (MediaType)
 import           Network.HTTP.Types (Status)
 import qualified Network.HTTP.Types as HTTP
-import           Network.Wai (Application, Request (..))
+import           Network.Wai (Request (..))
 
 import           P
-
-import           System.IO (IO)
 
 import           Webship.Decision (CommittedResponse (..), PartialResponse (..), DecisionName (..), Decision (..), DecisionT, DecisionF, DecisionH)
 import           Webship.Decision.Data
@@ -31,6 +30,9 @@ import           Webship.Resource.Data
 import           Webship.Http
 import           Webship.Wai
 
+
+-- FIX type aliases are evil, what do do here?
+type Resource m = Request -> UTCTime -> FlowStateT m ()
 
 -- | This is a temporary monad and shouldn't escape this module
 newtype FlowStateT m a =
@@ -41,6 +43,225 @@ newtype FlowStateT m a =
 instance MonadTrans FlowStateT where
   lift =
     FlowStateT . EitherT . (>>= return . Right) . lift
+
+resource ::
+     Monad m
+  => ResourceDesc a b
+  -> m (Either ResourceDenied (a -> b -> m (ResourceExists m)))
+  -> Resource m
+resource rd m req now = do
+  (a, (accept, b), re) <- newResource req rd m
+  lift (re a b) >>= \case
+    ResourceExists c run ->
+      resourceExists req now accept c run
+    ResourceNotFound run ->
+      resourceNotFound req accept run
+
+resourceExists :: Monad m => Request -> UTCTime -> MediaType -> CacheData -> (forall a. ResourceMethod a -> m a) -> FlowStateT m ()
+resourceExists req now accept cache f = do
+    _ <- g07 (Just ())
+    preconditions req now cache
+    let
+      ok'' a g = (lift . f) a >>= g >>= ok' req accept cache
+    m16 req >>= \case
+        Right () -> ok'' RDelete deleteResource
+        Left () -> n16 req >>= \case
+            Right () -> ok'' RPost postResource
+            Left () -> o16 req >>= \case
+                Right () -> ok'' RPut putResource
+                Left () -> ok'' ROther return
+
+resourceNotFound :: Monad m => Request -> MediaType -> (forall a. ResourceNotFoundMethod a -> m a) -> FlowStateT m ()
+resourceNotFound req accept f = do
+  _ <- g07 Nothing
+  h07 req
+  i07 req >>= \case
+    Right () ->
+      lift (f MPut) >>= putNewResource req accept
+    Left () ->
+      -- Peeking ahead to l7/m5 so we can use better types
+      case (==) HTTP.methodPost . requestMethod $ req of
+        True ->
+          lift (f MPost) >>= postNewResource req accept
+        False ->
+          lift (f MOther) >>= otherNewResource req
+
+deleteResource :: Monad m => RDeleteAction -> FlowStateT m ResponseEntity
+deleteResource = \case
+  RDeleteAccepted -> do
+    m20 False
+    flowStateHalt HTTP.status500
+  RDeleteOk re -> do
+    m20 True
+    return re
+
+putResource :: Monad m => RPutAction -> FlowStateT m ResponseEntity
+putResource = \case
+  RPutConflict -> do
+    o14 True
+    flowStateHalt HTTP.status500
+  RPutCreated l -> do
+    o14 False
+    p11 $ Just l
+    flowStateHalt HTTP.status500
+  RPutOk re -> do
+    o14 False
+    p11 Nothing
+    return re
+
+postResource :: Monad m => RPostAction -> FlowStateT m ResponseEntity
+postResource = \case
+  RPostSeeOther l -> do
+    n11 $ Just l
+    flowStateHalt HTTP.status500
+  RPostCreated l -> do
+    n11 Nothing
+    p11 $ Just l
+    flowStateHalt HTTP.status500
+  RPostOk re -> do
+    n11 Nothing
+    p11 Nothing
+    return re
+
+postNewResource :: Monad m => Request -> MediaType -> MPostAction -> FlowStateT m ()
+postNewResource req accept = \case
+  MPostMoved moved -> do
+    _ <- k07 PreviouslyExisted
+    movedResource moved
+  MPostGone -> do
+    _ <- k07 PreviouslyExisted
+    l07 req
+    k05 Nothing
+    l05 Nothing
+    m05 req
+    n05 False
+  MPostNotFound -> do
+    _ <- k07 NeverSeenBefore
+    l07 req
+    m07 False
+  MPostSeeOther loc -> do
+    _ <- k07 NeverSeenBefore
+    l07 req
+    m07 True
+    n11 $ Just loc
+  MPostRedirect loc -> do
+    _ <- k07 NeverSeenBefore
+    l07 req
+    m07 True
+    n11 Nothing
+    p11 $ Just loc
+  MPostOk cache b -> do
+    _ <- k07 NeverSeenBefore
+    l07 req
+    m07 True
+    n11 Nothing
+    p11 Nothing
+    ok' req accept cache b
+
+otherNewResource :: Monad m => Request -> MOtherAction -> FlowStateT m ()
+otherNewResource req = \case
+  MOtherMoved moved -> do
+    _ <- k07 PreviouslyExisted
+    movedResource moved
+  MOtherGone -> do
+    _ <- k07 PreviouslyExisted
+    k05 Nothing
+    l05 Nothing
+    m05 req
+  MOtherNotFound -> do
+    _ <- k07 NeverSeenBefore
+    l07 req
+
+movedResource :: Monad m => Moved -> FlowStateT m ()
+movedResource = \case
+  MovedPermanently b ->
+    k05 $ Just b
+  MovedTemporarily b -> do
+    k05 Nothing
+    l05 $ Just b
+
+putNewResource :: Monad m => Request -> MediaType -> MPutAction -> FlowStateT m ()
+putNewResource req accept = \case
+  MPutMoved l ->
+    i04 $ Just l
+  MPutConflict -> do
+    i04 Nothing
+    p03 True
+  MPutCreated l -> do
+    i04 Nothing
+    p03 False
+    p11 $ Just l
+  MPutOk cache re -> do
+    i04 Nothing
+    p03 False
+    p11 Nothing
+    ok' req accept cache re
+
+ok' :: Monad m => Request -> MediaType -> CacheData -> ResponseEntity -> FlowStateT m ()
+ok' req mt cache (ResponseEntity mr b) = do
+  o20 b
+  setResponseBody b $
+    o18 (req, mr == MultipleRepresentations, cache, mt)
+
+newResource :: Monad m => Request -> ResourceDesc a b -> m (Either ResourceDenied c) -> FlowStateT m (a, (MediaType, b), c)
+newResource req (ResourceDesc available methods contentTypes accept lang) rd = do
+  b13 available
+  b12 req
+  b10 (req, methods)
+  (contentType, c) <- lift rd >>= \case
+    Left rd' -> do
+      b11 rd'
+      b09 rd'
+      b08 rd'
+      b07 rd'
+      b06 rd'
+      _ <- b05 (req, [])
+      b04 rd'
+      -- This is because we're not pattern matching so that the trace is correct
+      flowStateHalt HTTP.status500
+    Right c -> do
+       a <- liftM (fromMaybe (snd $ NE.head contentTypes)) . b05 . (,) req $ NE.toList contentTypes
+       return (a, c)
+  b03 (req, methods)
+  b <- liftM (either id id . first (\() -> NE.head accept)) $
+    c03 req >>= mapM (\a -> c04 (a, NE.toList accept))
+  d04 req >>= mapM_ (d05 . lang)
+  e05 req >>= mapM_ (e06)
+  f06 req >>= mapM_ (f07)
+  return (contentType, b, c)
+
+preconditions :: Monad m => Request -> UTCTime -> CacheData -> FlowStateT m ()
+preconditions req now (CacheData modified' etag) = do
+  ifMatch' req etag
+  ifUnmodifiedSince' req modified'
+  ifNoneMatch' req etag
+  ifModifiedSince' req now modified'
+
+ifMatch' :: Monad m => Request -> Maybe ETag -> FlowStateT m ()
+ifMatch' req etag =
+  g08 req >>= mapM_ (g09 >=> either (g11 . (,) etag) return)
+
+ifUnmodifiedSince' :: Monad m => Request -> Maybe UTCTime -> FlowStateT m ()
+ifUnmodifiedSince' req lastModified =
+  h10 req
+    >>= mapM_ (h11 >=> mapM_ (h12 . (,) lastModified))
+
+ifNoneMatch' :: Monad m => Request -> Maybe ETag -> FlowStateT m ()
+ifNoneMatch' req etag =
+  i12 req
+    >>= mapM_ (i13 >=>
+      either
+        (k13 . (,) etag >=> either return (\_ -> j18 req))
+        (\() -> j18 req)
+      )
+
+ifModifiedSince' :: Monad m => Request -> UTCTime -> Maybe UTCTime -> FlowStateT m ()
+ifModifiedSince' req now lastModified =
+  l13 req
+    >>= mapM_ (l14 >=> mapM (
+          (l15 . (,) now) >=> either (l17 . (,) lastModified) return
+        )
+      )
 
 flowStateHalt :: Monad m => Status -> FlowStateT m a
 flowStateHalt =
@@ -84,238 +305,6 @@ setResponseBody b (FlowStateT e) =
   FlowStateT . mapEitherT (liftM (first (first (const b)))) $ e
 
 
-preconditions :: Monad m => Request -> UTCTime -> CacheData -> FlowStateT m ()
-preconditions req now (CacheData modified' etag) = do
-  ifMatch' req etag
-  ifUnmodifiedSince' req modified'
-  ifNoneMatch' req etag
-  ifModifiedSince' req now modified'
-
-ifMatch' :: Monad m => Request -> Maybe ETag -> FlowStateT m ()
-ifMatch' req etag =
-  g08 req >>= mapM_ (g09 >=> either (g11 . (,) etag) return)
-
-ifUnmodifiedSince' :: Monad m => Request -> Maybe UTCTime -> FlowStateT m ()
-ifUnmodifiedSince' req lastModified =
-  h10 req
-    >>= mapM_ (h11 >=> mapM_ (h12 . (,) lastModified))
-
-ifNoneMatch' :: Monad m => Request -> Maybe ETag -> FlowStateT m ()
-ifNoneMatch' req etag =
-  i12 req
-    >>= mapM_ (i13 >=>
-      either
-        (k13 . (,) etag >=> either return (\_ -> j18 req))
-        (\() -> j18 req)
-      )
-
-ifModifiedSince' :: Monad m => Request -> UTCTime -> Maybe UTCTime -> FlowStateT m ()
-ifModifiedSince' req now lastModified =
-  l13 req
-    >>= mapM_ (l14 >=> mapM (
-          (l15 . (,) now) >=> either (l17 . (,) lastModified) return
-        )
-      )
-
-application :: (forall a. m a -> IO a) -> (Request -> UTCTime -> FlowStateT m ()) -> Application
-application f fs req respond = do
-  now <-  getCurrentTime
-  -- FIX Add trace headers
-  (x, (_, PartialResponse h)) <- f . runWriterT . runEitherT . runFlowStateT $ fs req now
-  respond $ case x of
-    Left (b, s) ->
-      toWaiResponse s h b
-    -- Should be impossible
-    Right () ->
-      toWaiResponse HTTP.status500 h Empty
-
-resource ::
-     Monad m
-  => ResourceDesc a b
-  -> m (Either ResourceDenied (a -> b -> m (ResourceExists m)))
-  -> Request
-  -> UTCTime
-  -> FlowStateT m ()
-resource rd m req now = do
-    (a, (accept, b), re) <- newResource req rd m
-    lift (re a b) >>= \case
-        ResourceExists c run ->
-            resourceExists req now accept c run
-        ResourceNotFound run ->
-            resourceNotFound req accept run
-
-resourceExists :: Monad m => Request -> UTCTime -> MediaType -> CacheData -> (forall a. ResourceMethod a -> m a) -> FlowStateT m ()
-resourceExists req now accept cache f = do
-    _ <- g07 (Just ())
-    preconditions req now cache
-    let
-      ok'' a g = (lift . f) a >>= g >>= ok' req accept cache
-    m16 req >>= \case
-        Right () -> ok'' RDelete deleteResource
-        Left () -> n16 req >>= \case
-            Right () -> ok'' RPost postResource
-            Left () -> o16 req >>= \case
-                Right () -> ok'' RPut putResource
-                Left () -> ok'' ROther return
-
-resourceNotFound :: Monad m => Request -> MediaType -> (forall a. ResourceNotFoundMethod a -> m a) -> FlowStateT m ()
-resourceNotFound req accept f = do
-    _ <- g07 Nothing
-    h07 req
-    i07 req >>= \case
-        Left () ->
-          lift (f MPut) >>= putNewResource req accept
-        Right () ->
-            -- Peeking ahead to l7/m5 so we can use better types
-            case (==) HTTP.methodPost . requestMethod $ req of
-                True ->
-                  lift (f MPost) >>= postNewResource req accept
-                False ->
-                  lift (f MOther) >>= otherNewResource req
-
-deleteResource :: Monad m => RDeleteAction -> FlowStateT m ResponseEntity
-deleteResource = \case
-    RDeleteAccepted -> do
-        m20 False
-        flowStateHalt HTTP.status500
-    RDeleteOk re -> do
-        m20 True
-        return re
-
-putResource :: Monad m => RPutAction -> FlowStateT m ResponseEntity
-putResource = \case
-    RPutConflict -> do
-        o14 True
-        flowStateHalt HTTP.status500
-    RPutCreated l -> do
-        o14 False
-        p11 $ Just l
-        flowStateHalt HTTP.status500
-    RPutOk re -> do
-        o14 False
-        p11 Nothing
-        return re
-
-postResource :: Monad m => RPostAction -> FlowStateT m ResponseEntity
-postResource = \case
-    RPostSeeOther l -> do
-        n11 $ Just l
-        flowStateHalt HTTP.status500
-    RPostCreated l -> do
-        n11 Nothing
-        p11 $ Just l
-        flowStateHalt HTTP.status500
-    RPostOk re -> do
-        n11 Nothing
-        p11 Nothing
-        return re
-
-postNewResource :: Monad m => Request -> MediaType -> MPostAction -> FlowStateT m ()
-postNewResource req accept = \case
-    MPostMoved moved -> do
-        _ <- k07 PreviouslyExisted
-        movedResource moved
-    MPostGone -> do
-        _ <- k07 PreviouslyExisted
-        l07 req
-        k05 Nothing
-        l05 Nothing
-        m05 req
-        n05 False
-    MPostNotFound -> do
-        _ <- k07 NeverSeenBefore
-        l07 req
-        m07 False
-    MPostSeeOther loc -> do
-        _ <- k07 NeverSeenBefore
-        l07 req
-        m07 True
-        n11 $ Just loc
-    MPostRedirect loc -> do
-        _ <- k07 NeverSeenBefore
-        l07 req
-        m07 True
-        n11 Nothing
-        p11 $ Just loc
-    MPostOk cache b -> do
-        _ <- k07 NeverSeenBefore
-        l07 req
-        m07 True
-        n11 Nothing
-        p11 Nothing
-        ok' req accept cache b
-
-otherNewResource :: Monad m => Request -> MOtherAction -> FlowStateT m ()
-otherNewResource req = \case
-    MOtherMoved moved -> do
-        _ <- k07 PreviouslyExisted
-        movedResource moved
-    MOtherGone -> do
-        _ <- k07 PreviouslyExisted
-        k05 Nothing
-        l05 Nothing
-        m05 req
-    MOtherNotFound -> do
-        _ <- k07 NeverSeenBefore
-        l07 req
-
-movedResource :: Monad m => Moved -> FlowStateT m ()
-movedResource = \case
-    MovedPermanently b ->
-        k05 $ Just b
-    MovedTemporarily b -> do
-        k05 Nothing
-        l05 $ Just b
-
-putNewResource :: Monad m => Request -> MediaType -> MPutAction -> FlowStateT m ()
-putNewResource req accept = \case
-    MPutMoved l ->
-        i04 $ Just l
-    MPutConflict -> do
-        i04 Nothing
-        p03 True
-    MPutCreated l -> do
-        i04 Nothing
-        p03 False
-        p11 $ Just l
-    MPutOk cache re -> do
-        i04 Nothing
-        p03 False
-        p11 Nothing
-        ok' req accept cache re
-
-ok' :: Monad m => Request -> MediaType -> CacheData -> ResponseEntity -> FlowStateT m ()
-ok' req mt cache (ResponseEntity mr b) = do
-    o20 b
-    setResponseBody b $
-      o18 (req, mr == MultipleRepresentations, cache, mt)
-
-newResource :: Monad m => Request -> ResourceDesc a b -> m (Either ResourceDenied c) -> FlowStateT m (a, (MediaType, b), c)
-newResource req (ResourceDesc available methods contentTypes accept lang) rd = do
-    b13 available
-    b12 req
-    b10 (req, methods)
-    (contentType, c) <- lift rd >>= \case
-        Left rd' -> do
-            b11 rd'
-            b09 rd'
-            b08 rd'
-            b07 rd'
-            b06 rd'
-            _ <- b05 (req, [])
-            b04 rd'
-            -- This is because we're not pattern matching so that the trace is correct
-            flowStateHalt HTTP.status500
-        Right c -> do
-           a <- liftM (fromMaybe (snd $ NE.head contentTypes)) . b05 . (,) req $ NE.toList contentTypes
-           return (a, c)
-    b03 (req, methods)
-    b <- liftM (either id id . first (\() -> NE.head accept)) $
-      c03 req >>= mapM (\a -> c04 (a, NE.toList accept))
-    d04 req >>= mapM_ (d05 . lang)
-    e05 req >>= mapM_ (e06)
-    f06 req >>= mapM_ (f07)
-    return (contentType, b, c)
 
 ---
 --- FIX Can we not define these twice somehow?

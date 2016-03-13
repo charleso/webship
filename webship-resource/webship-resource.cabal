@@ -38,3 +38,4 @@ library
                        Webship.Resource
                        Webship.Resource.Data
                        Webship.Resource.Decision
+                       Webship.Resource.Wai
