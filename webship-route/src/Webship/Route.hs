@@ -94,9 +94,10 @@ root =
 -- will capture all URLs of the form @\/blog\/$date\/$post@, and add @date@ and @post@ to the 'routingParams'
 -- contained within the resource this route maps to.
 var :: Route Text
-var = Route [Var]
-  -- Yuck. :( Note that given the implementation of 'matchesRoute' it should be impossible to fail
-  (state (\t -> (Unsafe.head t, drop 1 t)))
+var =
+  Route [Var]
+    -- Yuck. :( Note that given the implementation of 'matchesRoute' it should be impossible to fail
+    (state (\t -> (Unsafe.head t, drop 1 t)))
 
 -- | Captures a wildcard route. For example,
 --
@@ -130,7 +131,6 @@ newtype RoutingSpec m a =
 k #> v =
   RoutingSpec $ tell [RouteResource $ fmap v k]
 
--- TODO REMOVE
 (@>) :: Route () -> r -> RoutingSpec r ()
 k @> v =
   k #> (const v)

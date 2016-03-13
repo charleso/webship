@@ -27,6 +27,7 @@ library
 
   exposed-modules:
                        Webship.Route
+                       Webship.Route.Wai
 
 
 test-suite test
