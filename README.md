@@ -15,4 +15,10 @@ function calls, which is clunky and inprecise.
 
 This library is an attempt to implement a _simple_ but type-safe alternative.
 
+## Example
+
+See [Basic.hs](blob/master/example/webship-example/src/Webship/Example/Basic.hs).
+
+## HTTP
+
 ![decision](https://bytebucket.org/justin/webmachine/wiki/http-headers-status-v3.png)

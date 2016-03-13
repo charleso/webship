@@ -4,7 +4,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
 module Webship.Resource.Data (
-    MOtherAction (..)
+    module X
+  , MOtherAction (..)
   , MPostAction (..)
   , MPutAction (..)
   , Moved (..)
@@ -29,7 +30,8 @@ import           Network.HTTP.Media (MediaType)
 import           Network.HTTP.Types (Method)
 import qualified Network.HTTP.Types as HTTP
 
-import           Webship.Decision.Data
+-- FIX Exporting this is a smell, some of these data types should be in webship-http probably
+import           Webship.Decision.Data as X
 import           Webship.Wai
 
 

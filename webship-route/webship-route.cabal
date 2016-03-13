@@ -1,0 +1,43 @@
+name:                  webship-route
+version:               0.0.1
+license:               AllRightsReserved
+author:                Charles O'Farrell <charleso@charleso.org>
+maintainer:            Charles O'Farrell <charleso@charleso.org>
+synopsis:              webship-route
+category:              Web
+cabal-version:         >= 1.8
+build-type:            Simple
+description:           webship-route.
+
+library
+  build-depends:
+                       base                            >= 3          && < 5
+                     , ambiata-p
+                     , text                            == 1.2.*
+                     , transformers                    >= 0.4        && < 0.6
+                     , wai                             == 3.0.*
+
+
+  ghc-options:
+                       -Wall
+
+  hs-source-dirs:
+                       src
+
+
+  exposed-modules:
+                       Webship.Route
+                       Webship.Route.Wai
+
+
+test-suite test
+  type:                exitcode-stdio-1.0
+  main-is:             test.hs
+  ghc-options:         -Wall -threaded -O2
+  hs-source-dirs:      test
+  build-depends:       base
+                     , ambiata-p
+                     , QuickCheck                      == 2.7.*
+                     , quickcheck-instances            == 0.3.*
+                     , webship-route
+

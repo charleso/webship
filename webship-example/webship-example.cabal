@@ -1,29 +1,32 @@
-name:                  webship-resource
+name:                  webship-example
 version:               0.0.1
 license:               AllRightsReserved
 author:                Charles O'Farrell <charleso@charleso.org>
 maintainer:            Charles O'Farrell <charleso@charleso.org>
-synopsis:              webship-resource
+synopsis:              webship-example
 category:              Web
 cabal-version:         >= 1.8
 build-type:            Simple
-description:           webship-resource.
+description:           webship-example.
 
 library
   build-depends:
                        base                            >= 3          && < 5
                      , ambiata-p
-                     , either                          == 4.3.*
-                     , http-media                      == 0.6.*
+                     , blaze-builder                   == 0.4.*
+                     , bytestring                      == 0.10.*
+                     , hashable                        == 1.2.*
                      , http-types                      == 0.8.*
                      , semigroups                      == 0.18.*
                      , text                            == 1.2.*
                      , time                            == 1.4.*
                      , transformers                    >= 0.4        && < 0.6
+                     , unordered-containers            == 0.2.*
                      , wai                             == 3.0.*
-                     , wai-extra                       == 3.0.*
-                     , webship-decision
+                     , warp                            == 3.0.*
                      , webship-http
+                     , webship-resource
+                     , webship-route
                      , webship-wai
 
 
@@ -35,7 +38,4 @@ library
 
 
   exposed-modules:
-                       Webship.Resource
-                       Webship.Resource.Data
-                       Webship.Resource.Decision
-                       Webship.Resource.Wai
+                       Webship.Example.Basic
