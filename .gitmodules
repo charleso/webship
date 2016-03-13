@@ -1,6 +1,6 @@
 [submodule "lib/p"]
 	path = lib/p
-	url = git@github.com:ambiata/p.git
+	url = https://github.com/ambiata/p.git
 [submodule "webship-diagram/http-decision-diagram"]
 	path = webship-diagram/http-decision-diagram
 	url = https://github.com/for-GET/http-decision-diagram.git
