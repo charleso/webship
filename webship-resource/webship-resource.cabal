@@ -1,0 +1,40 @@
+name:                  webship-resource
+version:               0.0.1
+license:               AllRightsReserved
+author:                Charles O'Farrell <charleso@charleso.org>
+maintainer:            Charles O'Farrell <charleso@charleso.org>
+synopsis:              webship-resource
+category:              Web
+cabal-version:         >= 1.8
+build-type:            Simple
+description:           webship-resource.
+
+library
+  build-depends:
+                       base                            >= 3          && < 5
+                     , ambiata-p
+                     , either                          == 4.3.*
+                     , http-media                      == 0.6.*
+                     , http-types                      == 0.8.*
+                     , semigroups                      == 0.18.*
+                     , text                            == 1.2.*
+                     , time                            == 1.4.*
+                     , transformers                    >= 0.4        && < 0.6
+                     , wai                             == 3.0.*
+                     , wai-extra                       == 3.0.*
+                     , webship-decision
+                     , webship-http
+                     , webship-wai
+
+
+  ghc-options:
+                       -Wall
+
+  hs-source-dirs:
+                       src
+
+
+  exposed-modules:
+                       Webship.Resource
+                       Webship.Resource.Data
+                       Webship.Resource.Decision

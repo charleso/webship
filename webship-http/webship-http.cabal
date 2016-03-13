@@ -1,0 +1,35 @@
+name:                  webship-http
+version:               0.0.1
+license:               AllRightsReserved
+author:                Charles O'Farrell <charleso@charleso.org>
+maintainer:            Charles O'Farrell <charleso@charleso.org>
+synopsis:              webship-http
+category:              Web
+cabal-version:         >= 1.8
+build-type:            Simple
+description:           webship-http.
+
+library
+  build-depends:
+                       base                            >= 3          && < 5
+                     , ambiata-p
+                     , attoparsec                      == 0.13.*
+                     , bytestring                      == 0.10.*
+                     , http-date                       == 0.0.*
+                     , http-types                      == 0.8.*
+                     , old-locale                      == 1.0.*
+                     , time                            == 1.4.*
+
+
+  ghc-options:
+                       -Wall
+
+  hs-source-dirs:
+                       src
+
+
+  exposed-modules:
+                       Webship.Http
+                       Webship.Http.ETag
+                       Webship.Http.Date
+                       Webship.Http.Header
