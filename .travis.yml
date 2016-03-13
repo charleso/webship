@@ -1,0 +1,30 @@
+# NB: don't set `language: haskell` here
+
+env:
+ - CABALVER=1.18 GHCVER=7.8.4
+
+# Note: the distinction between `before_install` and `install` is not important.
+before_install:
+ - travis_retry sudo add-apt-repository -y ppa:hvr/ghc
+ - travis_retry sudo apt-get update
+ - travis_retry sudo apt-get install cabal-install-$CABALVER ghc-$GHCVER # see note about happy/alex
+ - export PATH=/opt/ghc/$GHCVER/bin:/opt/cabal/$CABALVER/bin:$PATH
+
+install:
+ - cabal --version
+ - echo "$(ghc --version) [$(ghc --print-project-git-commit-id 2> /dev/null || echo '?')]"
+ - travis_retry cabal update
+ - cabal install --only-dependencies --enable-tests --enable-benchmarks
+
+# Here starts the actual work to be performed for the package under test; any command which exits with a non-zero exit code causes the build to fail.
+script:
+ - for d in webship-http webship-wai webship-decision webship-example; do
+     cd $d
+     ./mafia build && ./mafia test
+   done
+
+# Caching so the next build will be fast too.
+cache:
+  directories:
+  - $HOME/.cabal/packages
+  - $HOME/.ambiata

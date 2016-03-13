@@ -1,6 +1,8 @@
 Webship
 =======
 
+[![Build Status](https://travis-ci.org/charleso/webship.svg?branch=master)](https://travis-ci.org/charleso/webship)
+
 Webship is a set of Haskell libraries for handling and serving HTTP requests in a RESTful fashion.
 
 It is heavily inspired by [Airship](https://github.com/helium/airship) and
