@@ -8,8 +8,6 @@ import qualified Network.Wai as Wai
 
 import           P
 
-import           System.IO (IO)
-
 import           Webship.Route
 
 
