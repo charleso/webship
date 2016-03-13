@@ -1,0 +1,41 @@
+name:                  webship-example
+version:               0.0.1
+license:               AllRightsReserved
+author:                Charles O'Farrell <charleso@charleso.org>
+maintainer:            Charles O'Farrell <charleso@charleso.org>
+synopsis:              webship-example
+category:              Web
+cabal-version:         >= 1.8
+build-type:            Simple
+description:           webship-example.
+
+library
+  build-depends:
+                       base                            >= 3          && < 5
+                     , ambiata-p
+                     , blaze-builder                   == 0.4.*
+                     , bytestring                      == 0.10.*
+                     , hashable                        == 1.2.*
+                     , http-types                      == 0.8.*
+                     , semigroups                      == 0.18.*
+                     , text                            == 1.2.*
+                     , time                            == 1.4.*
+                     , transformers                    >= 0.4        && < 0.6
+                     , unordered-containers            == 0.2.*
+                     , wai                             == 3.0.*
+                     , warp                            == 3.0.*
+                     , webship-http
+                     , webship-resource
+                     , webship-route
+                     , webship-wai
+
+
+  ghc-options:
+                       -Wall
+
+  hs-source-dirs:
+                       src
+
+
+  exposed-modules:
+                       Webship.Example.Basic
