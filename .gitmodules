@@ -1,3 +1,9 @@
 [submodule "lib/p"]
 	path = lib/p
 	url = git@github.com:ambiata/p.git
+[submodule "webship-diagram/http-decision-diagram"]
+	path = webship-diagram/http-decision-diagram
+	url = https://github.com/for-GET/http-decision-diagram.git
+[submodule "webship-diagram/api-pegjs"]
+	path = webship-diagram/api-pegjs
+	url = https://github.com/for-GET/api-pegjs.git
