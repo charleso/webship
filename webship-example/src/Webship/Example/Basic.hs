@@ -20,7 +20,7 @@ import           Data.Text (Text, pack)
 import           Data.Time.Clock
 
 import qualified Network.HTTP.Types as HTTP
-import           Network.Wai (Request)
+import           Network.Wai (Application, Request)
 import qualified Network.Wai as Wai
 import qualified Network.Wai.Handler.Warp as Warp
 
@@ -125,11 +125,15 @@ myRoutes = do
 
 main :: IO ()
 main = do
-  s <- State <$> newMVar HM.empty
   putStrLn "Listening on port 3000"
   Warp.runSettings
     (Warp.setPort 3000 (Warp.setHost "127.0.0.1" Warp.defaultSettings))
-    (routesToWai (resourceToWaiT (\_ -> flip evalStateT s)) myRoutes resource404)
+    =<< basicApplication
+
+basicApplication :: IO Application
+basicApplication = do
+  s <- State <$> newMVar HM.empty
+  return $ routesToWai (resourceToWaiT (\_ -> flip evalStateT s)) myRoutes resource404
 
 
 readBody :: Request -> IO Integer

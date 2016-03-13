@@ -39,3 +39,18 @@ library
 
   exposed-modules:
                        Webship.Example.Basic
+
+test-suite test
+  type:                exitcode-stdio-1.0
+  main-is:             test.hs
+  ghc-options:         -Wall -threaded -O2
+  hs-source-dirs:      test
+  build-depends:       base
+                     , ambiata-p
+                     , bytestring
+                     , http-types
+                     , QuickCheck                      == 2.7.*
+                     , quickcheck-instances            == 0.3.*
+                     , wai
+                     , wai-extra
+                     , webship-example
