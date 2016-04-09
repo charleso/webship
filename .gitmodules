@@ -7,3 +7,6 @@
 [submodule "webship-diagram/api-pegjs"]
 	path = webship-diagram/api-pegjs
 	url = https://github.com/for-GET/api-pegjs.git
+[submodule "lib/portmanteau"]
+	path = lib/portmanteau
+	url = https://github.com/charleso/portmanteau.git

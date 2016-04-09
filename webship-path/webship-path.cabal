@@ -1,22 +1,22 @@
-name:                  webship-route
+name:                  webship-path
 version:               0.0.1
 license:               AllRightsReserved
 author:                Charles O'Farrell <charleso@charleso.org>
 maintainer:            Charles O'Farrell <charleso@charleso.org>
-synopsis:              webship-route
+synopsis:              webship-path
 category:              Web
 cabal-version:         >= 1.8
 build-type:            Simple
-description:           webship-route.
+description:           webship-path.
 
 library
   build-depends:
                        base                            >= 3          && < 5
                      , ambiata-p
+                     , contravariant                   == 1.4.*
+                     , portmanteau-core
                      , text                            == 1.2.*
                      , transformers                    >= 0.4        && < 0.6
-                     , wai                             == 3.0.*
-                     , webship-path
 
 
   ghc-options:
@@ -27,8 +27,7 @@ library
 
 
   exposed-modules:
-                       Webship.Route
-                       Webship.Route.Wai
+                       Webship.Path
 
 
 test-suite test
@@ -41,7 +40,5 @@ test-suite test
                      , portmanteau-core
                      , QuickCheck                      == 2.7.*
                      , quickcheck-instances            == 0.3.*
-                     , text
                      , webship-path
-                     , webship-route
 

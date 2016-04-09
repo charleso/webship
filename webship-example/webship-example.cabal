@@ -17,6 +17,8 @@ library
                      , bytestring                      == 0.10.*
                      , hashable                        == 1.2.*
                      , http-types                      == 0.8.*
+                     , portmanteau-core
+                     , portmanteau-lens
                      , semigroups                      == 0.18.*
                      , text                            == 1.2.*
                      , time                            == 1.4.*
@@ -25,6 +27,7 @@ library
                      , wai                             == 3.0.*
                      , warp                            == 3.0.*
                      , webship-http
+                     , webship-path
                      , webship-resource
                      , webship-route
                      , webship-wai

@@ -3,6 +3,7 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell #-}
 module Webship.Example.Basic where
 
 import           Blaze.ByteString.Builder.Html.Utf8 (fromHtmlEscapedText)
@@ -27,9 +28,13 @@ import qualified Network.Wai.Handler.Warp as Warp
 import           P
 import qualified Prelude as Unsafe (error)
 
+import           Portmanteau.Core
+import           Portmanteau.Lens
+
 import           System.IO (IO, putStrLn)
 
 import           Webship.Http
+import           Webship.Path
 import           Webship.Resource
 import           Webship.Route
 import           Webship.Route.Wai
@@ -48,6 +53,7 @@ newtype AccountName =
   AccountName {
       renderAccountName :: Text
     } deriving (Eq, Hashable, Ord, Show)
+makeIso ''AccountName
 
 
 resourceWithBody :: MonadIO m => Text -> Resource (StateT State m)
@@ -120,7 +126,7 @@ myRoutes :: RoutingSpec (Resource (StateT State IO)) ()
 myRoutes = do
   root @>
     resourceWithBody "Just the root resource"
-  "account" /> (AccountName <$> var) #>
+  seg "account" *| (_AccountName |$| var) #>
     accountResource
 
 main :: IO ()
