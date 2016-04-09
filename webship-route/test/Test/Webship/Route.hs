@@ -5,41 +5,44 @@
 {-# OPTIONS_GHC -fno-warn-missing-signatures #-}
 module Test.Webship.Route where
 
+import           Data.Text (Text)
+
 import           P
+
+import           Portmanteau.Core
 
 import           System.IO (IO)
 
 import           Test.QuickCheck ((===), conjoin, quickCheckAll)
 
+import           Webship.Path
 import           Webship.Route
 
 
 prop_matchRouteRoot =
   conjoin [
-      matchRoute' [] root === Just ((), [])
+      matchRoute' [] root === Just ()
     , matchRoute' ["a"] root === Nothing
     ]
 
 prop_matchRouteStatic =
   conjoin [
-      matchRoute' ["a", "b", "c", "x"] (root </ "a" </ "b" </ "c" </ "d") === Nothing
-    , matchRoute' ["a", "b", "c", "d"] (root </ "a" </ "b" </ "c" </ "d") === Just ((), [])
+      matchRoute' ["a", "b", "c", "x"] (root |* seg "a" |* seg "b" |* seg "c" |* seg "d") === Nothing
+    , matchRoute' ["a", "b", "c", "d"] (root |* seg "a" |* seg "b" |* seg "c" |* seg "d") === Just ()
     ]
 
 prop_matchRouteVar =
   conjoin [
-      matchRoute' ["a", "b", "c", "x"] ((,) <$> "a" /> var </> var </ "d") === Nothing
-    , matchRoute' ["a", "b", "c"] ((,) <$> "a" /> var </> var </ "d") === Nothing
-    , matchRoute' ["a", "b", "c", "d"] ((,) <$> "a" /> var </> var </ "d") === Just (("b", "c"), ["d"])
-    , matchRoute' ["a", "b", "c", "d"] ((,) <$> "a" /> var </> "c" /> var) === Just (("b", "d"), ["c"])
-    , matchRoute' ["a", "b", "c", "d"] ((,) <$> "a" /> var </> ((,) <$> var </> var)) === Just (("b", ("c", "d")), [])
+      matchRoute' ["a", "b", "c", "x"] (seg "a" *| var |*| var |* seg "d") === Nothing
+    , matchRoute' ["a", "b", "c"] (seg "a" *| var |*| var |* seg "d") === Nothing
+    , matchRoute' ["a", "b", "c", "d"] (seg "a" *| var |*| var |* seg "d") === Just ("b", "c")
+    , matchRoute' ["a", "b", "c", "d"] (seg "a" *| var |*| seg "c" *| var) === Just ("b", "d")
     ]
 
-prop_matchRouteStar =
-  conjoin [
-      matchRoute' ["a", "b", "c", "d"] star === Just ((), ["a", "b", "c", "d"])
-    , matchRoute' ["a", "b", "c", "d"] ("a" /> star) === Just ((), ["b", "c", "d"])
-    ]
+-- FIX Because I'm too lazy to rewrite the tests
+matchRoute' :: [Text] -> Path' e a -> Maybe a
+matchRoute' s p =
+  route (runRouter $ p #> id) s
 
 
 return []

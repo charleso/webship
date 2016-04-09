@@ -13,4 +13,4 @@ import           Webship.Route
 
 routesToWai :: (m -> Application) -> RoutingSpec m () -> m -> Application
 routesToWai run routes resource404 req respond =
-  run (fst $ route (runRouter routes) (Wai.pathInfo req) resource404) req respond
+  run (fromMaybe resource404 $ route (runRouter routes) (Wai.pathInfo req)) req respond
