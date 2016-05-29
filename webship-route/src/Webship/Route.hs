@@ -51,7 +51,7 @@ newtype RoutingSpec' e m a =
       getRouter :: Writer [RouteResource e m] a
     } deriving (Functor, Applicative, Monad)
 
-type RoutingSpec = RoutingSpec' ()
+type RoutingSpec = RoutingSpec' Text
 
 -- Indicate that a particular 'Path' maps to a given 'Resource'
 (#>) :: Path' e p -> (p -> r) -> RoutingSpec' e r ()
