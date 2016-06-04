@@ -18,7 +18,7 @@ import           Webship.Path
 
 prop_path_example_1 a =
   pathTripping a $
-    seg "a" *| var |*| seg "b" *| varInt
+    seg "a" *| var |*| seg "b" *| pathInt var
 
 
 pathTripping :: (Eq a, Show a) => a -> Path a -> Property
