@@ -14,9 +14,10 @@ module Webship.Path (
   , seg
   , varParse
   , varParse'
-  , varInt
+  , pathInt
   ) where
 
+import           Control.Monad.Trans.Class (lift)
 import           Control.Monad.Trans.State (StateT (..))
 
 import           Data.Functor.Contravariant (Op (..))
@@ -25,7 +26,7 @@ import qualified Data.Text as T
 
 import           P
 
-import           Portmanteau.Core (Codec' (..), Codec)
+import           Portmanteau.Core (Codec' (..), Codec, (|>|))
 
 
 {- |
@@ -93,6 +94,6 @@ varParse' e d =
     (Op (pure . e))
     (StateT $ \xs -> case xs of [] -> Left PathConsumed; h : t -> flip (,) t <$> d h)
 
-varInt :: Path Int
-varInt =
-  varParse (T.pack . show) (first T.pack . readEither . T.unpack)
+pathInt :: Path Text -> Path Int
+pathInt =
+  T.pack . show |>| lift . first (PathParseError . T.pack) . readEither . T.unpack
