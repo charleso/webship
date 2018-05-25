@@ -9,12 +9,11 @@ import qualified Data.ByteString.Char8 as C8
 import           Data.Time.Calendar (fromGregorian)
 import           Data.Time.Clock (UTCTime(..), secondsToDiffTime)
 import           Data.Time.Format (formatTime)
+import           Data.Time.Locale.Compat (defaultTimeLocale)
 
 import qualified Network.HTTP.Date as HD
 
 import           P
-
-import           System.Locale (defaultTimeLocale)
 
 
 parseRfc1123Date :: ByteString -> Maybe UTCTime

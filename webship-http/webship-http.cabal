@@ -19,6 +19,7 @@ library
                      , http-types                      == 0.8.*
                      , old-locale                      == 1.0.*
                      , time                            >= 1.4        && < 1.7
+                     , time-locale-compat              == 0.1.*
 
 
   ghc-options:
